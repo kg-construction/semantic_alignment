@@ -30,8 +30,8 @@ try:
     from .config.diplomat_config import DiplomatConfig
 except (ImportError, ValueError):
     # Fall back to absolute imports (when run as script)
-    from application.diplomat_service import DiplomatService
-    from config.diplomat_config import DiplomatConfig
+    from src.application.diplomat_service import DiplomatService
+    from src.config.diplomat_config import DiplomatConfig
 
 
 # -----------------------
