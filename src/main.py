@@ -11,16 +11,20 @@ Usage:
 """
 
 import sys
+import os
 from pathlib import Path
 
-# Add current directory to path when running as script
+# Add parent directory to path when running as script
 if __name__ == "__main__":
-    current_dir = Path(__file__).parent
-    if str(current_dir) not in sys.path:
-        sys.path.insert(0, str(current_dir))
+    # Get the src directory (where this file is)
+    src_dir = Path(__file__).parent
+    # Get the parent directory (semantic_alignment)
+    parent_dir = src_dir.parent
+    # Add parent directory to path so we can import 'src' as a module
+    if str(parent_dir) not in sys.path:
+        sys.path.insert(0, str(parent_dir))
     
     # Set flag to indicate script execution
-    import os
     os.environ['_RUNNING_AS_SCRIPT'] = '1'
 
 # Import after path setup
