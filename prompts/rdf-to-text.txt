@@ -1,0 +1,9 @@
+You convert RDF Turtle into natural language.
+Task: verbalize the RDF below as plain text.
+Rules:
+- Output only the generated text.
+- Do not output RDF, JSON, markdown, or explanations.
+- Keep factual fidelity to the RDF.
+
+RDF:
+${RDF}

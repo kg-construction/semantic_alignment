@@ -2,7 +2,6 @@
 
 import os
 import requests
-from typing import Optional
 
 # Handle both relative and absolute imports
 if os.environ.get('_RUNNING_AS_SCRIPT') == '1':
@@ -42,11 +41,29 @@ class OllamaClient:
             "stream": False  # easier to parse for evaluation
         }
 
-        response = requests.post(self.config.ollama_url, json=payload)
-        response.raise_for_status()
+        response = requests.post(self.config.ollama_url, json=payload, timeout=120)
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as exc:
+            details = self._extract_error_message(response)
+            raise requests.HTTPError(
+                f"Ollama request failed ({response.status_code}): {details}",
+                response=response,
+            ) from exc
 
         data = response.json()
         generated = data.get("response", "")
 
         return generated.strip()
+
+    @staticmethod
+    def _extract_error_message(response: requests.Response) -> str:
+        try:
+            data = response.json()
+            if isinstance(data, dict):
+                return str(data.get("error") or data.get("message") or data)
+            return str(data)
+        except ValueError:
+            body = (response.text or "").strip()
+            return body if body else "Unknown error returned by Ollama."
 

@@ -13,29 +13,6 @@ This project implements a complete pipeline that:
 
 The code is organized following **Domain-Driven Design (DDD)** principles to facilitate maintenance, testing, and extension.
 
-## 🏗️ Architecture
-
-The project is structured in layers following DDD:
-
-```
-semantic_evaluation/
-├── domain/                    # Domain layer
-│   └── types.py              # Domain types (Triplet)
-│
-├── config/                    # Configuration
-│   └── diplomat_config.py    # Service configuration
-│
-├── infrastructure/            # Infrastructure layer
-│   ├── ollama_client.py      # Ollama API client
-│   ├── bleurt_evaluator.py   # BLEURT evaluator
-│   └── prompt_builder.py    # Prompt builder
-│
-├── application/               # Application layer
-│   └── diplomat_service.py  # Main service (orchestration)
-│
-└── main.py                   # Entry point
-```
-
 ## 🔧 Installation
 
 ### 1. Install Python Dependencies
@@ -67,10 +44,41 @@ The server should be available at `http://localhost:11434`
 
 ## 🚀 Usage
 
-### Run Example
+### Run API
 
-Simply run from the `semantic_evaluation` directory:
+Run from the `semantic_alignment` directory:
 
 ```bash
-python main.py
+python -m src.app
+```
+
+The API starts on `http://127.0.0.1:5060`.
+
+### Analyze Endpoint
+
+`POST /analyze`
+
+Behavior:
+- The LLM receives only the RDF and generates plain text (`generated_text`).
+- BLEURT is calculated by comparing `generated_text` against the original `text`.
+- The prompt template is loaded from `prompts/rdf-to-text.txt` (or `DEFAULT_PROMPT_NAME`).
+
+Request body:
+
+```json
+{
+  "text": "Original text",
+  "rdf": "@prefix ex: <http://example.org/> ."
+}
+```
+
+Response body:
+
+```json
+{
+  "text": "Original text",
+  "rdf": "@prefix ex: <http://example.org/> .",
+  "generated_text": "Text generated from RDF.",
+  "bleurt": 0.91
+}
 ```
