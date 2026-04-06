@@ -15,6 +15,8 @@ def create_app() -> Flask:
     config = DiplomatConfig(
         llama_model=os.getenv("OLLAMA_MODEL", os.getenv("LLAMA_MODEL", "llama3")),
         ollama_url=os.getenv("OLLAMA_API_URL", os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")),
+        bleurt_model_name=os.getenv("BLEURT_MODEL_NAME", "Elron/bleurt-base-512"),
+        device=os.getenv("BLEURT_DEVICE"),
     )
     ollama_client = OllamaClient(config=config)
     prompt_repository = PromptRepository()

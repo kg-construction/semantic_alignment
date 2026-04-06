@@ -1,0 +1,10 @@
+.git
+.pytest-temp
+.pytest_cache
+.tmp
+tmp
+.venv
+venv
+env_semantic_alignment
+__pycache__
+*.pyc

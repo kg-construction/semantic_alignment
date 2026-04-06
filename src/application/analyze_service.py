@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from ..config.diplomat_config import DiplomatConfig
 from ..domain.models import AnalyzeRequest, AnalyzeResponse
-from ..infrastructure.bleurt_evaluator import BLEURTEvaluator
 from ..infrastructure.ollama_client import OllamaClient
 from ..infrastructure.prompt_repository import PromptRepository
+
+if TYPE_CHECKING:
+    from ..infrastructure.bleurt_evaluator import BLEURTEvaluator
+
+BLEURTEvaluator = None
 
 
 class SemanticAlignmentService:
@@ -46,7 +50,11 @@ class SemanticAlignmentService:
     def _compute_bleurt(self, reference: str, candidate: str) -> float:
         evaluator = self.bleurt_evaluator
         if evaluator is None and self.config is not None:
-            evaluator = BLEURTEvaluator(config=self.config)
+            evaluator_cls = BLEURTEvaluator
+            if evaluator_cls is None:
+                from ..infrastructure.bleurt_evaluator import BLEURTEvaluator as evaluator_cls
+
+            evaluator = evaluator_cls(config=self.config)
             self.bleurt_evaluator = evaluator
         if evaluator is None:
             raise RuntimeError("BLEURT evaluator is not configured.")
