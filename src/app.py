@@ -9,12 +9,30 @@ from .infrastructure.ollama_client import OllamaClient
 from .infrastructure.prompt_repository import PromptRepository
 
 
+def _get_float_env(name: str, default: float) -> float:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return float(value)
+
+
+def _get_int_env(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return int(value)
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
     config = DiplomatConfig(
         llama_model=os.getenv("OLLAMA_MODEL", os.getenv("LLAMA_MODEL", "llama3")),
         ollama_url=os.getenv("OLLAMA_API_URL", os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")),
+        ollama_timeout_seconds=_get_float_env("OLLAMA_TIMEOUT_SECONDS", 600.0),
+        ollama_max_retries=max(_get_int_env("OLLAMA_MAX_RETRIES", 3), 1),
+        ollama_retry_sleep_seconds=max(_get_float_env("OLLAMA_RETRY_SLEEP_SECONDS", 5.0), 0.0),
+        ollama_num_predict=max(_get_int_env("OLLAMA_NUM_PREDICT", 160), 1),
         bleurt_model_name=os.getenv("BLEURT_MODEL_NAME", "Elron/bleurt-base-512"),
         device=os.getenv("BLEURT_DEVICE"),
     )

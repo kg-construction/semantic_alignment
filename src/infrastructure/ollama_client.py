@@ -1,6 +1,7 @@
 """Ollama API client for text generation."""
 
 import os
+import time
 import requests
 
 # Handle both relative and absolute imports
@@ -38,23 +39,54 @@ class OllamaClient:
         payload = {
             "model": self.config.llama_model,
             "prompt": prompt,
-            "stream": False  # easier to parse for evaluation
+            "stream": False,  # easier to parse for evaluation
+            "options": {
+                "num_predict": self.config.ollama_num_predict,
+                "temperature": 0,
+            },
         }
 
-        response = requests.post(self.config.ollama_url, json=payload, timeout=120)
-        try:
-            response.raise_for_status()
-        except requests.HTTPError as exc:
-            details = self._extract_error_message(response)
-            raise requests.HTTPError(
-                f"Ollama request failed ({response.status_code}): {details}",
-                response=response,
-            ) from exc
+        response = self._post_with_retries(payload)
 
         data = response.json()
         generated = data.get("response", "")
 
         return generated.strip()
+
+    def _post_with_retries(self, payload: dict) -> requests.Response:
+        max_retries = max(int(self.config.ollama_max_retries), 1)
+        retry_sleep = max(float(self.config.ollama_retry_sleep_seconds), 0.0)
+        timeout = float(self.config.ollama_timeout_seconds)
+        last_error: requests.RequestException | None = None
+
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = requests.post(self.config.ollama_url, json=payload, timeout=timeout)
+                response.raise_for_status()
+                return response
+            except requests.HTTPError as exc:
+                response = exc.response
+                if response is None:
+                    last_error = exc
+                    should_retry = True
+                else:
+                    last_error = requests.HTTPError(
+                        f"Ollama request failed ({response.status_code}): {self._extract_error_message(response)}",
+                        response=response,
+                    )
+                    should_retry = response.status_code in (500, 502, 503, 504)
+                if not should_retry or attempt == max_retries:
+                    raise last_error from exc
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                last_error = exc
+                if attempt == max_retries:
+                    raise
+
+            time.sleep(retry_sleep)
+
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("Ollama request failed before a response was returned.")
 
     @staticmethod
     def _extract_error_message(response: requests.Response) -> str:
